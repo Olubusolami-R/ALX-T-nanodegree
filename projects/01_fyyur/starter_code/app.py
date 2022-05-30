@@ -42,7 +42,6 @@ def format_datetime(value, format='medium'):
     date = dateutil.parser.parse(value)
   else:
     date = value
-  # date = dateutil.parser.parse(value)
   if format == 'full':
       format="EEEE MMMM, d, y 'at' h:mma"
   elif format == 'medium':
@@ -57,10 +56,10 @@ app.jinja_env.filters['datetime'] = format_datetime
 
 @app.route('/')
 def index():
+  recent_venues=[]
+  recent_artists=[]
   recent_artists=Artist.query.order_by(desc('date_added')).limit(10).all()
   recent_venues=Venue.query.order_by(desc('date_added')).limit(10).all()
-  print(recent_venues)
-  print(recent_artists)
   return render_template('pages/home.html',recent_artists=recent_artists,recent_venues=recent_venues)
 
 
@@ -69,8 +68,6 @@ def index():
 
 @app.route('/venues')
 def venues():
-  # TODO: replace with real venues data.
-  #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
   areas=[]
   all_venues=Venue.query.all()
   venue_set=set()
@@ -164,20 +161,12 @@ def delete_venue(venue_id):
       return jsonify({'status':'deleted'})
     else:
       return jsonify({'status':'not deleted'})
-  
-    
-  # TODO: Complete this endpoint for taking a venue_id, and using
-  # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
 
-  # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
-  # clicking that button delete it from the db then redirect the user to the homepage
-  # return None
 
 #  Artists
 #  ----------------------------------------------------------------
 @app.route('/artists')
 def artists():
-  # TODO: replace with real data returned from querying the database
   real_artists=Artist.query.all()
   return render_template('pages/artists.html', artists=real_artists)
 
@@ -191,12 +180,11 @@ def search_artists():
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
-  # shows the artist page with the given artist_id
-  # TODO: replace with real artist data from the artist table, using artist_id
   real_artist=Artist.query.get(artist_id)
   ps=Show.query.join(Artist).filter(Artist.id==artist_id).filter(Show.start_time<datetime.now())
   us=Show.query.join(Artist).filter(Artist.id==artist_id).filter(Show.start_time>datetime.now())
   return render_template('pages/show_artist.html', artist=real_artist,upcoming_shows=us,past_shows=ps)
+
 
 #  Update
 #  ----------------------------------------------------------------
@@ -214,13 +202,10 @@ def edit_artist(artist_id):
   form.image_link.data=artist.image_link
   form.seeking_description.data=artist.seeking_description
   form.seeking_venue.data=artist.seeking_venue
-  # TODO: populate form with fields from artist with ID <artist_id>
   return render_template('forms/edit_artist.html', form=form, artist=artist)
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-  # TODO: take values from the form submitted, and update existing
-  # artist record with ID <artist_id> using the new attributes
   form=ArtistForm(request.form)
   artist=Artist.query.get(artist_id)
   if form.validate():
@@ -260,13 +245,10 @@ def edit_venue(venue_id):
   form.image_link.data=venue.image_link
   form.seeking_talent.data=venue.seeking_talent
   form.seeking_description.data=venue.seeking_description
-  # TODO: populate form with values from venue with ID <venue_id>
   return render_template('forms/edit_venue.html', form=form, venue=venue)
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
-  # TODO: take values from the form submitted, and update existing
-  # venue record with ID <venue_id> using the new attributes
   form=VenueForm(request.form)
   venue=Venue.query.get(venue_id)
   if form.validate():

@@ -46,7 +46,7 @@ class Artist(db.Model):#parent artist can have many shows
     def __repr__(self):
         return f'<Artist {self.id} {self.name} {self.date_added}'
 
-class Show(db.Model): #child show can only have one artist / venue per time. shikena.
+class Show(db.Model): #child show can only have one artist / venue per time
 
     __tablename__ = 'shows'
 
