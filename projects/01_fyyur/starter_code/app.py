@@ -9,7 +9,8 @@ import dateutil.parser
 import babel
 from flask import Flask, jsonify, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
-from flask_sqlalchemy import SQLAlchemy, inspect
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import desc
 import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
@@ -56,7 +57,11 @@ app.jinja_env.filters['datetime'] = format_datetime
 
 @app.route('/')
 def index():
-  return render_template('pages/home.html')
+  recent_artists=Artist.query.order_by(desc('date_added')).limit(10).all()
+  recent_venues=Venue.query.order_by(desc('date_added')).limit(10).all()
+  print(recent_venues)
+  print(recent_artists)
+  return render_template('pages/home.html',recent_artists=recent_artists,recent_venues=recent_venues)
 
 
 #  Venues
