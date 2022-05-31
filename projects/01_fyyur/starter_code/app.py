@@ -7,7 +7,16 @@ import sys
 from xxlimited import new
 import dateutil.parser
 import babel
-from flask import Flask, jsonify, render_template, request, Response, flash, redirect, url_for
+from flask import (
+    Flask,
+    jsonify, 
+    render_template, 
+    request, 
+    Response, 
+    flash, 
+    redirect, 
+    url_for
+)
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import desc
@@ -22,10 +31,10 @@ from models import db,Artist,Venue,Show
 #----------------------------------------------------------------------------#
 
 app = Flask(__name__)
+app.config.from_object('config')
 app.app_context().push()
 db.init_app(app)
 moment = Moment(app)
-app.config.from_object('config')
 migrate=Migrate(app,db)
 # TODO: connect to a local postgresql database
 
@@ -116,13 +125,24 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
+  error=""
   form=VenueForm(request.form)
   if form.validate():
-    insert=request.form.get
     try:
-      newVenue=Venue(name=insert('name'),city=insert('city'),state=insert('state'),image_link=insert('image_link'),phone=insert('phone'),address=insert('address'), genres=request.form.getlist('genres'),facebook_link=insert('facebook_link'),
-      website_link=insert('website_link'), seeking_talent=bool(insert('seeking_talent')), seeking_description=insert('seeking_description')
+      newVenue=Venue(
+        name=form.name.data,
+        city=form.city.data,
+        state=form.state.data,
+        image_link=form.image_link.data,
+        phone=form.phone.data,
+        address=form.address.data,
+        genres=form.genres.data,
+        facebook_link=form.facebook_link.data,
+        website_link=form.website_link.data, 
+        seeking_talent=form.seeking_talent.data,
+        seeking_description=form.seeking_description.data
       )
+      print(newVenue,newVenue.seeking_talent)
       db.session.add(newVenue)
       db.session.commit()
       flash('Venue ' + request.form['name'] + ' was successfully listed!')
@@ -206,6 +226,7 @@ def edit_artist(artist_id):
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
+  error=""
   form=ArtistForm(request.form)
   artist=Artist.query.get(artist_id)
   if form.validate():
@@ -228,7 +249,14 @@ def edit_artist_submission(artist_id):
       flash('An error occurred. Artist ' + request.form['name'] + ' could not be edited.')
     finally:
       db.session.close()
-      return redirect(url_for('show_artist', artist_id=artist_id))
+  else:
+    #to get specific validation errors
+    for name, errorMessages in form.errors.items():
+      for err in errorMessages:
+        print(name,err)
+        error+=name+": "+err+"\n"
+    flash('An error occurred.'+error)
+  return redirect(url_for('show_artist', artist_id=artist_id))
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
@@ -249,6 +277,7 @@ def edit_venue(venue_id):
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
+  error=""
   form=VenueForm(request.form)
   venue=Venue.query.get(venue_id)
   if form.validate():
@@ -269,13 +298,17 @@ def edit_venue_submission(venue_id):
       flash('Venue ' + request.form['name'] + ' was successfully edited')
     except:
       db.session.rollback()
-      flash('An error occurred. Venue ' + request.form['name'] + ' could not be edited.')
+      flash('An error occurred. Venue ' + request.form['name'] + ' could not be edited.')    
     finally:
       db.session.close()
-      return redirect(url_for('show_venue', venue_id=venue_id))
   else:
-    flash('An error occurred. Check your form.')
-
+    #to get specific validation errors
+    for name, errorMessages in form.errors.items():
+      for err in errorMessages:
+        print(name,err)
+        error+=name+": "+err+"\n"
+    flash('An error occurred.'+error)
+  return redirect(url_for('show_venue', venue_id=venue_id))
 #  Create Artist
 #  ----------------------------------------------------------------
 
@@ -289,10 +322,18 @@ def create_artist_submission():
   error=""
   form=ArtistForm(request.form)
   if form.validate():
-    try:
-      insert=request.form.get
-      new_artist=Artist(name=insert('name'),city=insert('city'),state=insert('state'),image_link=insert('image_link'),phone=insert('phone'), genres=request.form.getlist('genres'),facebook_link=insert('facebook_link'),
-      website_link=insert('website_link'),seeking_venue=True if insert('seeking_venue')=='y' else False, seeking_description=insert('seeking_description')
+    try: 
+      new_artist=Artist(
+        name=form.name.data,
+        city=form.city.data,
+        state=form.state.data,
+        image_link=form.image_link.data,
+        phone=form.phone.data,
+        genres=form.genres.data,
+        facebook_link=form.facebook_link.data,
+        website_link=form.website_link.data, 
+        seeking_venue=form.seeking_venue.data,
+        seeking_description=form.seeking_description.data
       )
       db.session.add(new_artist)
       db.session.commit()
@@ -333,8 +374,10 @@ def create_show_submission():
   form=ShowForm(request.form)
   if form.validate():
     try:
-      insert=request.form.get
-      new_show=Show(artist_id=insert('artist_id'),venue_id=insert('venue_id'),start_time=insert('start_time'))
+      new_show=Show(
+        artist_id=form.artist_id.data,
+        venue_id=form.venue_id.data,
+        start_time=form.start_time.data)
       db.session.add(new_show)
       db.session.commit()
       flash('Show was successfully listed!')
